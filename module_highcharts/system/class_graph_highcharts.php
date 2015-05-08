@@ -21,11 +21,13 @@ class class_graph_highcharts implements interface_graph {
 
     private $arrXAxisTickLabels = null;
     private $arrYAxisTickLabels = null;
-
     private $intNrOfWrittenLabelsXAxis = null;
     private $intNrOfWrittenLabelsYAxis = null;
-
     private $arrSeriesColors =  null;
+
+    private $bitIsHorizontalBar = false;
+    private $bitXAxisLabelsInvisible = false;
+    private $bitYAxisLabelsInvisible = false;
 
 
     /**
@@ -38,6 +40,9 @@ class class_graph_highcharts implements interface_graph {
     private $arrOptions = array(
         "credits" => array(
             "enabled" => false
+        ),
+        "tooltip" => array(
+            "followPinter" => true
         ),
 
         "colors" => array("#8bbc21", "#2f7ed8", "#f28f43", "#1aadce", "#77a1e5", "#0d233a", "#c42525", "#a6c96a", "#910000"),
@@ -56,32 +61,34 @@ class class_graph_highcharts implements interface_graph {
             "itemStyle" => array()
         ),
 
-        "title" => null,
+        "title" => "",
 
         "xAxis" => array(
             "title" => array(
-                "text" => null,
+                "text" => "",
                 "style" => array()
             ),
             "categories" => null,
             "labels" => array(
                 "rotation" => null,
-                "style" => array()
+                "style" => array(),
+                "enabled" => true
             ),
-            "minTickInterval" => null
+            "tickAmount" => null
         ),
 
         "yAxis" => array(
             "title" => array(
-                "text" => null,
+                "text" => "",
                 "style" => array()
             ),
             "categories" => null,
             "labels" => array(
                 "rotation" => null,
-                "style" => array()
+                "style" => array(),
+                "enabled" => true
             ),
-            "minTickInterval" => null
+            "tickAmount" => null
         ),
 
         "plotOptions" => array(
@@ -91,18 +98,50 @@ class class_graph_highcharts implements interface_graph {
             "bar" => array(
                 "stacking" => null
             ),
+            "events" => array(
+                "click" => null
+            )
         ),
 
-        "series" => array()
+        "series" => array(),
+
+        "exporting" => array(
+            "enabled" => false
+        )
     );
 
 
+    /**
+     * Checks if the chart contains the given chart type
+     *
+     * @param $intChartType
+     *
+     * @return bool
+     */
     function containsChartType($intChartType) {
         foreach($this->arrSeriesData as $objSeriesData) {
             if($objSeriesData->getIntChartType() === $intChartType)
                 return true;
         }
         return false;
+    }
+
+    /**
+     * Gets series objects of the given chart type
+     *
+     * @param array $arrChartTypes
+     *
+     * @return class_graph_highcharts_seriesdata[]
+     */
+    private function getSeriesObjectsByChartType(array $arrChartTypes) {
+        $arrSeriesObjects = array();
+
+        foreach($this->arrSeriesData as $objSeriesData) {
+            if(in_array($objSeriesData->getIntChartType(), $arrChartTypes)) {
+                $arrSeriesObjects[] = $objSeriesData;
+            }
+        }
+        return $arrSeriesObjects;
     }
 
     /**
@@ -123,6 +162,8 @@ class class_graph_highcharts implements interface_graph {
      * @throws class_exception
      */
     public function addBarChartSet($arrValues, $strLegend, $bitWriteValues = false) {
+        $arrDataPoints = class_graph_commons::convertArrValuesToDataPointArray($arrValues);
+
         if($this->containsChartType(class_graph_highcharts_charttype::PIE)) {
             throw new class_exception("Chart already contains a Pie chart. Combinations of pie charts and bar charts are not allowed", class_exception::$level_ERROR);
         }
@@ -131,7 +172,7 @@ class class_graph_highcharts implements interface_graph {
         }
 
         $objSeriesData = new class_graph_highcharts_seriesdata(class_graph_highcharts_charttype::BAR, count($this->arrSeriesData), $this->arrOptions);
-        $objSeriesData->setArrDataArray($arrValues);
+        $objSeriesData->setArrDataPoints($arrDataPoints);
         $objSeriesData->setStrSeriesLabel($strLegend);
         $objSeriesData->setBitWriteValues($bitWriteValues);
 
@@ -158,6 +199,8 @@ class class_graph_highcharts implements interface_graph {
      * @throws class_exception
      */
     public function addStackedBarChartSet($arrValues, $strLegend, $bitIsHorizontal = false) {
+        $arrDataPoints = class_graph_commons::convertArrValuesToDataPointArray($arrValues);
+
         $barChartType =  class_graph_highcharts_charttype::STACKEDBAR;
         if($bitIsHorizontal) {
             $barChartType =  class_graph_highcharts_charttype::STACKEDBAR_HORIZONTAL;
@@ -180,7 +223,7 @@ class class_graph_highcharts implements interface_graph {
         }
 
         $objSeriesData = new class_graph_highcharts_seriesdata($barChartType, count($this->arrSeriesData), $this->arrOptions);
-        $objSeriesData->setArrDataArray($arrValues);
+        $objSeriesData->setArrDataPoints($arrDataPoints);
         $objSeriesData->setStrSeriesLabel($strLegend);
 
         $this->arrSeriesData[] = $objSeriesData;
@@ -205,6 +248,8 @@ class class_graph_highcharts implements interface_graph {
      * @throws class_exception
      */
     public function addLinePlot($arrValues, $strLegend) {
+        $arrDataPoints = class_graph_commons::convertArrValuesToDataPointArray($arrValues);
+
         if($this->containsChartType(class_graph_highcharts_charttype::PIE)) {
             throw new class_exception("Chart already contains a pie chart. Combinations of pie charts and line charts are not allowed", class_exception::$level_ERROR);
         }
@@ -213,7 +258,7 @@ class class_graph_highcharts implements interface_graph {
         }
 
         $objSeriesData = new class_graph_highcharts_seriesdata(class_graph_highcharts_charttype::LINE, count($this->arrSeriesData), $this->arrOptions);
-        $objSeriesData->setArrDataArray($arrValues);
+        $objSeriesData->setArrDataPoints($arrDataPoints);
         $objSeriesData->setStrSeriesLabel($strLegend);
 
         $this->arrSeriesData[] = $objSeriesData;
@@ -235,6 +280,8 @@ class class_graph_highcharts implements interface_graph {
      * @throws class_exception
      */
     public function createPieChart($arrValues, $arrLegends) {
+        $arrDataPoints = class_graph_commons::convertArrValuesToDataPointArray($arrValues);
+
         if($this->containsChartType(class_graph_highcharts_charttype::LINE)
             || $this->containsChartType(class_graph_highcharts_charttype::BAR)
             || $this->containsChartType(class_graph_highcharts_charttype::STACKEDBAR)
@@ -244,6 +291,12 @@ class class_graph_highcharts implements interface_graph {
         if($this->containsChartType(class_graph_highcharts_charttype::PIE)) {
             throw new class_exception("Chart already contains either a pie chart.Only one pie chart per chart is allowed", class_exception::$level_ERROR);
         }
+
+        $objSeriesData = new class_graph_highcharts_seriesdata(class_graph_jqplot_charttype::PIE, count($this->arrSeriesData), $this->arrOptions);
+        $objSeriesData->setArrDataPoints($arrDataPoints);
+
+        $this->setArrXAxisTickLabels($arrLegends);
+        $this->arrSeriesData[] = $objSeriesData;
     }
 
     /**
@@ -285,6 +338,8 @@ class class_graph_highcharts implements interface_graph {
             throw new class_exception("Chart not initialized yet", class_exception::$level_ERROR);
         }
 
+        $this->preGraphGeneration();
+
         //create id's
         $strSystemId = generateSystemid();
         $strChartId =  "chart_".$strSystemId;
@@ -295,19 +350,16 @@ class class_graph_highcharts implements interface_graph {
         //create the data array and options object for the highcharts method
         $strOptions = $this->strCreateJSOptions();
 
-        $strChartCode = "$(function() {";
-            //plots the graph
-            $strChartCode .= "var plot_$strChartId = $('#$strChartId').highcharts($strOptions);\n";
-        $strChartCode .="});";
-
         $strCoreDirectory = class_resourceloader::getInstance()->getCorePathForModule("module_highcharts");
 
         $strReturn .= "<script type='text/javascript'>
                 KAJONA.admin.loader.loadFile(['{$strCoreDirectory}/module_highcharts/admin/scripts/js/highcharts/highcharts.js'], function() {
                     KAJONA.admin.loader.loadFile([
                     '{$strCoreDirectory}/module_highcharts/admin/scripts/js/highcharts/modules/exporting.js',
+                    '{$strCoreDirectory}/module_highcharts/admin/scripts/js/custom/highcharts.custom.js',
                     ], function() {
-                        ".$strChartCode."
+                        var objChart_$strChartId = new KAJONA.admin.highchartsHelper.objChartWrapper('$strChartId', $strOptions);
+                        objChart_$strChartId.render();
                     });
                 });
         </script>";
@@ -315,6 +367,18 @@ class class_graph_highcharts implements interface_graph {
         return $strReturn;
     }
 
+
+    private function preGraphGeneration() {
+        if($this->bitIsHorizontalBar) {
+            $arrHorizontalCharts = $this->getSeriesObjectsByChartType(array(class_graph_highcharts_charttype::BAR, class_graph_highcharts_charttype::STACKEDBAR));
+
+            foreach($arrHorizontalCharts as $objChart) {
+                $arrOptions = $objChart->getArrSeriesOptions();
+                $arrOptions["type"]="bar";
+                $objChart->setArrSeriesOptions($arrOptions);
+            }
+        }
+    }
 
     /**
      * Create a deep copy of the given array containing no elements with null values.
@@ -372,43 +436,53 @@ class class_graph_highcharts implements interface_graph {
         });
 
         //add series options of each series to $arrOptions
-        foreach($this->arrSeriesData as $arrSeriesData) {
-            $this->arrOptions["series"][] = $arrSeriesData->getArrSeriesOptions();
-        }
+        foreach($this->arrSeriesData as $objSeriesData) {
+            $arrOptions = $objSeriesData->getArrSeriesOptions();
+            $arrOptions["data"] = $this->strCreateJSDataArray($objSeriesData);
 
-
-        if($this->arrXAxisTickLabels != null) {
-            if($this->intNrOfWrittenLabelsXAxis > 0) {
-                $this->arrOptions["xAxis"]["minTickInterval"] = ceil(count($this->arrXAxisTickLabels)/$this->intNrOfWrittenLabelsXAxis);
-            }
+            $this->arrOptions["series"][] = $arrOptions;
         }
 
         //remove all values which are null
         $this->arrOptions = $this->cleanUpArray($this->arrOptions);
         $strEncode =  json_encode($this->arrOptions);
+        $strEncode = preg_replace('/(\\"click\\":\\"(.*?)\\")/', "\"click\":$2", $strEncode);//remove '"' where an click event is being executed
+
+
         return $strEncode;
     }
 
-    private function strCreateJSDataArray() {
+    private function strCreateJSDataArray($objSeriesData) {
         $arrData = array();
+        $arrDataPoints = $objSeriesData->getArrDataPoints();
 
-        if($this->containsChartType(class_graph_highcharts_charttype::PIE) && $this->arrXAxisTickLabels != null) {
-            foreach($this->arrSeriesData as $keySeries => $arrSeriesData) {
-                $arrSeries = array();
-                $arrDataTemp = $this->arrSeriesData[$keySeries]->getArrDataArray();
-                foreach($this->arrXAxisTickLabels as $keyLabel => $strLabelData) {
-                    $arrSeries[]= array($strLabelData, $arrDataTemp[$keyLabel]);
-                }
-                $arrData[] = $arrSeries;
+        /** @var class_graph_datapoint $objDataPoint */
+        foreach($arrDataPoints as $objDataPoint) {
+            $arrPoint = array(
+                "events" => array(
+                    "click" => null
+                ),
+                "y" => null,
+                "name" => null
+            );
+
+            $arrPoint["y"] = $objDataPoint->getFloatValue();
+            if($objDataPoint->getObjActionHandler() !== null) {
+                $arrPoint["events"]["click"] = $objDataPoint->getObjActionHandler();
+            }
+
+            $arrData[] = $arrPoint;
+        }
+
+        //for pie charts name must included into the point
+        if($this->containsChartType(class_graph_highcharts_charttype::PIE)) {
+            foreach($arrData as  $intIndex => &$arrPoint) {
+                $arrPoint["name"] = $this->arrXAxisTickLabels[$intIndex];
             }
         }
-        else {
-            foreach($this->arrSeriesData as $arrSeriesData) {
-                $arrData[] = $arrSeriesData->getArrDataArray();
-            }
-        }
 
-        return json_encode($arrData);
+
+        return $arrData;
     }
 
     /**
@@ -481,6 +555,7 @@ class class_graph_highcharts implements interface_graph {
         $this->arrXAxisTickLabels = $arrXAxisTickLabels;
 
         $this->arrOptions["xAxis"]["categories"] = $arrXAxisTickLabels;
+        $this->arrOptions["xAxis"]["tickAmount"] = $intNrOfWrittenLabels;
     }
 
     /**
@@ -556,4 +631,68 @@ class class_graph_highcharts implements interface_graph {
         $this->arrSeriesColors = $arrSeriesColors;
         $this->arrOptions["colors"] = $arrSeriesColors;
     }
+
+    /**
+     * Sets the range for the xAxis.
+     *
+     * @param int $intMin
+     * @param int $intMax
+     */
+    public function setXAxisRange($intMin, $intMax) {
+        $this->arrOptions["xAxis"]["minRange"] = $intMin;
+        $this->arrOptions["xAxis"]["maxRange"] = $intMax;
+    }
+
+
+    /**
+     * Sets the range for the yAxis.
+     *
+     * @param int $intMin
+     * @param int $intMax
+     */
+    public function setYAxisRange($intMin, $intMax) {
+        $this->arrOptions["yAxis"]["minRange"] = $intMin;
+        $this->arrOptions["yAxis"]["maxRange"] = $intMax;
+    }
+
+
+    /**
+     * Method to render a horizontal bar chart
+     *
+     * @param bool $bitIsHorizontalBar
+     */
+    public function setBarHorizontal($bitIsHorizontalBar) {
+        $this->bitIsHorizontalBar = $bitIsHorizontalBar;
+    }
+
+
+    /**
+     * Hides the xAxis labels.
+     * Also hide the grid line for the xAxis.
+     *
+     * @param bool $bitHideXAxis
+     */
+    public function setHideXAxis($bitHideXAxis) {
+        $this->arrOptions["xAxis"]["labels"]["enabled"] = false;
+        $this->arrOptions["xAxis"]["gridLineWidth"] = 0;
+        $this->arrOptions["xAxis"]["minorGridLineWidth"] = 0;
+//        $this->arrOptions["xAxis"]["tickOptions"]["showGridline"] = false;
+        $this->bitXAxisLabelsInvisible = $bitHideXAxis;
+    }
+
+
+    /**
+     * Hides the xAxis labels.
+     * Also hide the grid line for the xAxis.
+     *
+     * @param bool $bitHideYAxis
+     */
+    public function setHideYAxis($bitHideYAxis) {
+        $this->arrOptions["yAxis"]["labels"]["enabled"] = false;
+        $this->arrOptions["yAxis"]["gridLineWidth"] = 0;
+        $this->arrOptions["yAxis"]["minorGridLineWidth"] = 0;
+        //$this->arrOptions["axes"]["yaxis"]["tickOptions"]["showGridline"] = false;
+        $this->bitYAxisLabelsInvisible = $bitHideYAxis;
+    }
+
 }

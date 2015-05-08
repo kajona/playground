@@ -15,7 +15,7 @@
  */
 class class_graph_highcharts_seriesdata {
 
-    private $arrDataArray = null;
+    private $arrDataPoints = null;
     private $intChartType = null;
     private $intSeriesDataOrder = null;
 
@@ -43,14 +43,19 @@ class class_graph_highcharts_seriesdata {
         else if($strChartType == class_graph_highcharts_charttype::BAR) {
             $this->arrSeriesOptions["type"] = "column";
         }
+        else if($strChartType == class_graph_highcharts_charttype::BAR_HORIZONTAL) {
+            $this->arrSeriesOptions["type"] = "bar";
+        }
         else if($strChartType == class_graph_highcharts_charttype::STACKEDBAR) {
             $this->arrSeriesOptions["type"] = "column";
             $this->arrSeriesOptions["stacking"] ="normal";
-
         }
         else if($strChartType == class_graph_highcharts_charttype::STACKEDBAR_HORIZONTAL) {
             $this->arrSeriesOptions["type"] = "bar";
             $this->arrSeriesOptions["stacking"] ="normal";
+        }
+        else if($strChartType == class_graph_highcharts_charttype::PIE) {
+            $this->arrSeriesOptions["type"] = "pie";
         }
         else {
             throw new class_exception("Not a valid chart type", class_exception::$level_ERROR);
@@ -84,16 +89,26 @@ class class_graph_highcharts_seriesdata {
     /**
      * @param array $arrDataArray
      */
-    public function setArrDataArray($arrDataArray) {
-        $this->arrSeriesOptions["data"] = $arrDataArray;
-        $this->arrDataArray = $arrDataArray;
+    public function setArrDataPoints($arrDataArray) {
+        $this->arrDataPoints = $arrDataArray;
+
+        //now process array -> all values which are not numeric will be converted to a 0
+        foreach($this->arrDataPoints as $objDataPoint) {
+            if(!is_numeric($objDataPoint->getFloatValue())) {
+                $objDataPoint->setFloatValue(0);
+            }
+        }
+
+        if(count($this->arrDataPoints) == 0) {
+            $this->arrDataPoints = array(new class_graph_datapoint(0));
+        }
     }
 
     /**
-     * @return array
+     * @return class_graph_datapoint[]
      */
-    public function getArrDataArray() {
-        return $this->arrDataArray;
+    public function getArrDataPoints() {
+        return $this->arrDataPoints;
     }
 
     /**
