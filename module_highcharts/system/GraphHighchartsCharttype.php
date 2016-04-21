@@ -6,6 +6,7 @@
 *   $Id$                               *
 ********************************************************************************************************/
 
+namespace Kajona\Highcharts\System;
 /**
  * Constants for the highcharts series data types.
  *
@@ -13,7 +14,8 @@
  * @since 4.6
  * @author stefan.meyer1@yahoo.de
  */
-class class_graph_highcharts_charttype {
+class GraphHighchartsCharttype
+{
     const BAR = 1;
     const STACKEDBAR = 2;
     const LINE = 4;

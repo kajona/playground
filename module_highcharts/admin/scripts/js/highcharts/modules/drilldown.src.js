@@ -1,16 +1,20 @@
 /**
- * Highcharts Drilldown plugin
+ * Highcharts Drilldown module
  * 
  * Author: Torstein Honsi
- * License: MIT License
+ * License: www.highcharts.com/license
  *
- * Demo: http://jsfiddle.net/highcharts/Vf3yT/
  */
 
-/*global Highcharts,HighchartsAdapter*/
-(function (H) {
+(function (factory) {
+	if (typeof module === 'object' && module.exports) {
+		module.exports = factory;
+	} else {
+		factory(Highcharts);
+	}
+}(function (H) {
 
-	"use strict";
+	'use strict';
 
 	var noop = function () {},
 		defaultOptions = H.getOptions(),
@@ -24,8 +28,8 @@
 		PieSeries = seriesTypes.pie,
 		ColumnSeries = seriesTypes.column,
 		Tick = H.Tick,
-		fireEvent = HighchartsAdapter.fireEvent,
-		inArray = HighchartsAdapter.inArray,
+		fireEvent = H.fireEvent,
+		inArray = H.inArray,
 		ddSeriesId = 1;
 
 	// Utilities
@@ -42,7 +46,7 @@
 
 		// Unsupported color, return to-color (#3920)
 		if (!to.rgba.length || !from.rgba.length) {
-			ret = to.raw || 'none';
+			ret = to.input || 'none';
 
 		// Interpolate
 		} else {
@@ -61,9 +65,9 @@
 	 * Handle animation of the color attributes directly
 	 */
 	each(['fill', 'stroke'], function (prop) {
-		HighchartsAdapter.addAnimSetter(prop, function (fx) {
-			fx.elem.attr(prop, tweenColors(H.Color(fx.start), H.Color(fx.end), fx.pos));
-		});
+		H.Fx.prototype[prop + 'Setter'] = function () {
+			this.elem.attr(prop, tweenColors(H.Color(this.start), H.Color(this.end), this.pos));
+		};
 	});
 
 	// Add language
@@ -346,6 +350,9 @@
 			}
 		}
 
+		// Fire a once-off event after all series have been drilled up (#5158)
+		fireEvent(chart, 'drillupall');
+
 		this.redraw();
 
 		if (this.drilldownLevels.length === 0) {
@@ -522,7 +529,7 @@
 		});
 	}
 	
-	H.Point.prototype.doDrilldown = function (_holdRedraw, category) {
+	H.Point.prototype.doDrilldown = function (_holdRedraw, category, originalEvent) {
 		var series = this.series,
 			chart = series.chart,
 			drilldown = chart.options.drilldown,
@@ -546,29 +553,34 @@
 			point: this,
 			seriesOptions: seriesOptions,
 			category: category,
+			originalEvent: originalEvent,
 			points: category !== undefined && this.series.xAxis.ddPoints[category].slice(0)
+		}, function (e) {
+			var chart = e.point.series && e.point.series.chart,
+				seriesOptions = e.seriesOptions;
+			if (chart && seriesOptions) {
+				if (_holdRedraw) {
+					chart.addSingleSeriesAsDrilldown(e.point, seriesOptions);
+				} else {
+					chart.addSeriesAsDrilldown(e.point, seriesOptions);
+				}
+			}
 		});
 		
-		if (seriesOptions) {
-			if (_holdRedraw) {
-				chart.addSingleSeriesAsDrilldown(this, seriesOptions);
-			} else {
-				chart.addSeriesAsDrilldown(this, seriesOptions);
-			}
-		}
+
 	};
 
 	/**
 	 * Drill down to a given category. This is the same as clicking on an axis label.
 	 */
-	H.Axis.prototype.drilldownCategory = function (x) {
+	H.Axis.prototype.drilldownCategory = function (x, e) {
 		var key,
 			point,
 			ddPointsX = this.ddPoints[x];
 		for (key in ddPointsX) {
 			point = ddPointsX[key];
 			if (point && point.series && point.series.visible && point.doDrilldown) { // #3197
-				point.doDrilldown(true, x);
+				point.doDrilldown(true, x, e);
 			}
 		}
 		this.chart.applyDrilldown();
@@ -608,8 +620,8 @@
 			label
 				.addClass('highcharts-drilldown-axis-label')
 				.css(axis.chart.options.drilldown.activeAxisLabelStyle)
-				.on('click', function () {
-					axis.drilldownCategory(pos);
+				.on('click', function (e) {
+					axis.drilldownCategory(pos, e);
 				});
 
 		} else if (label && label.basicStyles) {
@@ -641,8 +653,12 @@
 		if (point.drilldown) {
 			
 			// Add the click event to the point 
-			H.addEvent(point, 'click', function () {
-				point.doDrilldown();
+			H.addEvent(point, 'click', function (e) {
+				if (series.xAxis && series.chart.options.drilldown.allowPointDrilldown === false) {
+					series.xAxis.drilldownCategory(x, e);
+				} else {
+					point.doDrilldown(undefined, undefined, e);
+				}
 			});
 			/*wrap(point, 'importEvents', function (proceed) { // wrapping importEvents makes point.click event work
 				if (!this.hasImportedEvents) {
@@ -706,4 +722,4 @@
 		}
 	}
 		
-}(Highcharts));
+}));

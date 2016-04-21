@@ -5,6 +5,10 @@
 *-------------------------------------------------------------------------------------------------------*
 *	$Id$                           *
 ********************************************************************************************************/
+namespace Kajona\Highcharts\System;
+
+use Kajona\System\System\Exception;
+use Kajona\System\System\GraphDatapoint;
 
 /**
  * This class contains the data for a series and their specific options.
@@ -13,19 +17,19 @@
  * @since 4.6
  * @author stefan.meyer1@yahoo.de
  */
-class class_graph_highcharts_seriesdata {
+class GraphHighchartsSeriesdata
+{
 
     private $arrDataPoints = null;
     private $intChartType = null;
     private $intSeriesDataOrder = null;
 
 
-
     //contains specific options for this series
     private $arrSeriesOptions = array(
-        "type" => null,
-        "data" => null,
-        "name" => null,
+        "type"       => null,
+        "data"       => null,
+        "name"       => null,
         "dataLabels" => array(
             "enabled" => null
         ),
@@ -33,32 +37,33 @@ class class_graph_highcharts_seriesdata {
     );
 
 
-    public function __construct($strChartType, $intSeriesDataOrder, &$arrGlobalOptions) {
+    public function __construct($strChartType, $intSeriesDataOrder, &$arrGlobalOptions)
+    {
         $this->intSeriesDataOrder = $intSeriesDataOrder;
         $this->intChartType = $strChartType;
 
-        if($strChartType == class_graph_highcharts_charttype::LINE) {
+        if($strChartType == GraphHighchartsCharttype::LINE) {
             $this->arrSeriesOptions["type"] = "line";
         }
-        else if($strChartType == class_graph_highcharts_charttype::BAR) {
+        else if($strChartType == GraphHighchartsCharttype::BAR) {
             $this->arrSeriesOptions["type"] = "column";
         }
-        else if($strChartType == class_graph_highcharts_charttype::BAR_HORIZONTAL) {
+        else if($strChartType == GraphHighchartsCharttype::BAR_HORIZONTAL) {
             $this->arrSeriesOptions["type"] = "bar";
         }
-        else if($strChartType == class_graph_highcharts_charttype::STACKEDBAR) {
+        else if($strChartType == GraphHighchartsCharttype::STACKEDBAR) {
             $this->arrSeriesOptions["type"] = "column";
-            $this->arrSeriesOptions["stacking"] ="normal";
+            $this->arrSeriesOptions["stacking"] = "normal";
         }
-        else if($strChartType == class_graph_highcharts_charttype::STACKEDBAR_HORIZONTAL) {
+        else if($strChartType == GraphHighchartsCharttype::STACKEDBAR_HORIZONTAL) {
             $this->arrSeriesOptions["type"] = "bar";
-            $this->arrSeriesOptions["stacking"] ="normal";
+            $this->arrSeriesOptions["stacking"] = "normal";
         }
-        else if($strChartType == class_graph_highcharts_charttype::PIE) {
+        else if($strChartType == GraphHighchartsCharttype::PIE) {
             $this->arrSeriesOptions["type"] = "pie";
         }
         else {
-            throw new class_exception("Not a valid chart type", class_exception::$level_ERROR);
+            throw new Exception("Not a valid chart type", Exception::$level_ERROR);
         }
     }
 
@@ -66,14 +71,16 @@ class class_graph_highcharts_seriesdata {
     /**
      * @param bool $bitWriteValues
      */
-    public function setBitWriteValues($bitWriteValues = false) {
+    public function setBitWriteValues($bitWriteValues = false)
+    {
         $this->arrSeriesOptions["dataLabels"]["enabled"] = $bitWriteValues;
     }
 
     /**
      * @return int
      */
-    public function getIntChartType() {
+    public function getIntChartType()
+    {
         return $this->intChartType;
     }
 
@@ -81,7 +88,8 @@ class class_graph_highcharts_seriesdata {
     /**
      * @return int
      */
-    public function getIntSeriesDataOrder() {
+    public function getIntSeriesDataOrder()
+    {
         return $this->intSeriesDataOrder;
     }
 
@@ -89,7 +97,8 @@ class class_graph_highcharts_seriesdata {
     /**
      * @param array $arrDataArray
      */
-    public function setArrDataPoints($arrDataArray) {
+    public function setArrDataPoints($arrDataArray)
+    {
         $this->arrDataPoints = $arrDataArray;
 
         //now process array -> all values which are not numeric will be converted to a 0
@@ -100,28 +109,31 @@ class class_graph_highcharts_seriesdata {
         }
 
         if(count($this->arrDataPoints) == 0) {
-            $this->arrDataPoints = array(new class_graph_datapoint(0));
+            $this->arrDataPoints = array(new GraphDatapoint(0));
         }
     }
 
     /**
-     * @return class_graph_datapoint[]
+     * @return GraphDatapoint[]
      */
-    public function getArrDataPoints() {
+    public function getArrDataPoints()
+    {
         return $this->arrDataPoints;
     }
 
     /**
      * @param string $strSeriesLabel
      */
-    public function setStrSeriesLabel($strSeriesLabel) {
+    public function setStrSeriesLabel($strSeriesLabel)
+    {
         $this->arrSeriesOptions["name"] = $strSeriesLabel;
     }
 
     /**
      * @return string
      */
-    public function getStrSeriesLabel() {
+    public function getStrSeriesLabel()
+    {
         return $this->arrSeriesOptions["name"];
     }
 
@@ -130,21 +142,24 @@ class class_graph_highcharts_seriesdata {
      *
      * @return string
      */
-    public function optionsToJSON() {
+    public function optionsToJSON()
+    {
         return json_encode($this->arrSeriesOptions);
     }
 
     /**
      * @return array
      */
-    public function getArrSeriesOptions() {
+    public function getArrSeriesOptions()
+    {
         return $this->arrSeriesOptions;
     }
 
     /**
      * @param array $arrSeriesOptions
      */
-    public function setArrSeriesOptions($arrSeriesOptions) {
+    public function setArrSeriesOptions($arrSeriesOptions)
+    {
         $this->arrSeriesOptions = $arrSeriesOptions;
     }
 }
