@@ -224,9 +224,6 @@ class GraphHighcharts implements GraphInterface
         if($this->containsChartType(GraphHighchartsCharttype::PIE)) {
             throw new Exception("Chart already contains a Pie chart. Combinations of pie charts and stacked bar charts are not allowed", Exception::$level_ERROR);
         }
-        if($this->containsChartType(GraphHighchartsCharttype::LINE)) {
-            throw new Exception("Chart already contains a line chart. Combinations of line charts and stacked bar charts are not allowed", Exception::$level_ERROR);
-        }
         if($this->containsChartType(GraphHighchartsCharttype::BAR)) {
             throw new Exception("Chart already contains a bar chart. Combinations of bar charts and stacked bar charts are not allowed", Exception::$level_ERROR);
         }
@@ -268,9 +265,6 @@ class GraphHighcharts implements GraphInterface
 
         if($this->containsChartType(GraphHighchartsCharttype::PIE)) {
             throw new Exception("Chart already contains a pie chart. Combinations of pie charts and line charts are not allowed", Exception::$level_ERROR);
-        }
-        if($this->containsChartType(GraphHighchartsCharttype::STACKEDBAR)) {
-            throw new Exception("Chart already contains a stacked bar chart. Combinations of stacked bar charts and line charts are not allowed", Exception::$level_ERROR);
         }
 
         $objSeriesData = new GraphHighchartsSeriesdata(GraphHighchartsCharttype::LINE, count($this->arrSeriesData), $this->arrOptions);

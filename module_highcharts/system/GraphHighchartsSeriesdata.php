@@ -54,10 +54,16 @@ class GraphHighchartsSeriesdata
         else if($strChartType == GraphHighchartsCharttype::STACKEDBAR) {
             $this->arrSeriesOptions["type"] = "column";
             $this->arrSeriesOptions["stacking"] = "normal";
+            $this->arrSeriesOptions["dataLabels"]["enabled"] = true;
+
+            $arrGlobalOptions["yAxis"]["stackLabels"]["enabled"] = true;
         }
         else if($strChartType == GraphHighchartsCharttype::STACKEDBAR_HORIZONTAL) {
             $this->arrSeriesOptions["type"] = "bar";
             $this->arrSeriesOptions["stacking"] = "normal";
+            $this->arrSeriesOptions["dataLabels"]["enabled"] = true;
+
+            $arrGlobalOptions["xAxis"]["stackLabels"]["enabled"] = true;
         }
         else if($strChartType == GraphHighchartsCharttype::PIE) {
             $this->arrSeriesOptions["type"] = "pie";
